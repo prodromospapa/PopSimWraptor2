@@ -7,6 +7,7 @@ set -eu
 MSMS_URL="${MSMS_URL:-https://www.mabs.at/fileadmin/user_upload/p_mabs/msms3.2rc-b163.jar}"
 MSMS_SHA256="${MSMS_SHA256-}"
 DISCOAL_REF="${DISCOAL_REF-}"
+RAISD_AI_REF="${RAISD_AI_REF-}"
 
 if [ -z "${CONDA_PREFIX:-}" ]; then
   echo "CONDA_PREFIX is not set. Activate the popsimwraptor conda environment first:" >&2
@@ -68,4 +69,49 @@ if command -v git >/dev/null 2>&1 && command -v make >/dev/null 2>&1 && (command
   echo "discoal ready."
 else
   echo "Compiler toolchain (git/make/gcc) not available; skipping discoal build." >&2
+fi
+
+# ---- RAiSD-AI ------------------------------------------------------------
+# Non-blocking: never fails the overall install, just skips/warns if the
+# toolchain or build scripts are unavailable.
+if command -v git >/dev/null 2>&1 && command -v make >/dev/null 2>&1 && command -v gcc >/dev/null 2>&1; then
+  repo="$SHARE_DIR/RAiSD-AI"
+  if [ ! -d "$repo/.git" ]; then
+    rm -rf "$repo"
+    git clone --depth 1 https://github.com/alachins/RAiSD-AI.git "$repo" || true
+    if [ -n "$RAISD_AI_REF" ] && [ -d "$repo/.git" ]; then
+      git -C "$repo" fetch --tags || true
+      git -C "$repo" checkout --quiet "$RAISD_AI_REF" || true
+    fi
+  else
+    git -C "$repo" fetch --all --tags || true
+    git -C "$repo" pull --ff-only || true
+  fi
+
+  if [ -d "$repo/.git" ]; then
+    (
+      set +e
+      cd "$repo"
+      [ -x ./compile-RAiSD-AI.sh ] && ./compile-RAiSD-AI.sh
+      [ -x ./compile-RAiSD-AI-ZLIB.sh ] && ./compile-RAiSD-AI-ZLIB.sh
+      exit 0
+    )
+
+    ai="$BIN_DIR/RAiSD-AI"
+    zlib="$BIN_DIR/RAiSD-AI-ZLIB"
+    [ -e "$repo/bin/release/RAiSD-AI" ] && cp -L "$repo/bin/release/RAiSD-AI" "$ai" && chmod 0755 "$ai"
+    [ -e "$repo/bin/release/RAiSD-AI-ZLIB" ] && cp -L "$repo/bin/release/RAiSD-AI-ZLIB" "$zlib" && chmod 0755 "$zlib"
+    [ ! -x "$ai" ] && [ -x "$zlib" ] && ln -sf RAiSD-AI-ZLIB "$ai"
+    [ ! -x "$zlib" ] && [ -x "$ai" ] && ln -sf RAiSD-AI "$zlib"
+
+    if [ -x "$ai" ] || [ -x "$zlib" ]; then
+      echo "RAiSD-AI ready."
+    else
+      echo "RAiSD-AI clone succeeded but no binary was built; check compile-RAiSD-AI.sh output." >&2
+    fi
+  else
+    echo "Could not clone RAiSD-AI; skipping." >&2
+  fi
+else
+  echo "Compiler toolchain (git/make/gcc) not available; skipping RAiSD-AI build." >&2
 fi

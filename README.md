@@ -18,7 +18,7 @@ It wraps `stdpopsim` species and demographic models and can export simulated dat
 - `src/popsimwraptor/export.py` — output conversion helpers
 - `pyproject.toml` — installable Python package definition
 - `environment.yml` — conda environment definition (Python deps + SLiM/bcftools/Java/build tools)
-- `scripts/install_external_tools.sh` — installs `msms` and `discoal` into the active conda env prefix
+- `scripts/install_external_tools.sh` — installs `msms`, `discoal`, and `RAiSD-AI` into the active conda env prefix
 - `Dockerfile` — fully self-contained image with everything pre-installed
 
 ## Installation options
@@ -53,7 +53,7 @@ enable rootless Docker.
 ```bash
 conda env create -f environment.yml
 conda activate popsimwraptor
-sh scripts/install_external_tools.sh   # installs msms + discoal into the env prefix; no sudo needed
+sh scripts/install_external_tools.sh   # installs msms + discoal + RAiSD-AI into the env prefix; no sudo needed
 ```
 
 This creates/installs everything under the conda environment prefix (a directory you own), so no root access is
@@ -224,6 +224,10 @@ selection coefficient values.
   `environment.yml`).
 - For `msms`/`discoal`, having the simulator binaries in the active environment is required
   (`scripts/install_external_tools.sh` installs both without sudo).
+- `scripts/install_external_tools.sh` also clones and builds `RAiSD-AI` (github.com/alachins/RAiSD-AI) into the env
+  prefix's `bin/` directory when a compiler toolchain (`git`/`make`/`gcc`) is available. This step is non-blocking:
+  if the toolchain is missing or the build fails, the script warns and continues rather than aborting the rest of
+  the install. Set `RAISD_AI_REF` to pin a specific branch/tag/commit.
 - If you want a quick command preview, use `--get-commands` with `msms` or `discoal`.
 
 ## License
