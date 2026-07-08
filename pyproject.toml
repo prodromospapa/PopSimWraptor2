@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "popsimwraptor"
+version = "0.1.0"
+description = "A simulation wrapper for generating population-genetics data from stdpopsim demographic models"
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.24,<1.25",
+    "pandas>=2.2,<2.3",
+    "tqdm>=4.66",
+    "tskit>=0.5.6,<0.6",
+    "msprime>=1.2,<1.4",
+    "pyslim>=1.0.4,<1.2",
+    "stdpopsim==0.3.0",
+    "demes==0.2.3",
+]
+
+[project.scripts]
+popsimwraptor = "popsimwraptor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
