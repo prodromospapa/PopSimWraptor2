@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import functools
 import gzip
 import math
 import os
@@ -520,34 +521,33 @@ def main(argv=None):
     pending_ms = {}
     next_ms_index = 0
 
-    def submit_job(job):
-        return run_job(
-            engine,
-            species_std,
-            model_std,
-            chromosome,
-            length,
-            population_dict,
-            metadata,
-            info_file,
-            output_file,
-            output_format,
-            job,
-            sfs,
-            folded,
-            sfs_normalized,
-            fixation_time,
-            msms_cache,
-            ref_population=ref_population,
-            sweep_population=sweep_population,
-            sweep_pos=sweep_pos,
-            sweep_time=sweep_time,
-            selection_coeff=selection_coeff,
-            growth_steps=growth_steps,
-            slim_scaling_factor=slim_scaling_factor,
-            slim_burn_in=slim_burn_in,
-            get_commands=args.get_commands,
-        )
+    submit_job = functools.partial(
+        run_job,
+        engine,
+        species_std,
+        model_std,
+        chromosome,
+        length,
+        population_dict,
+        metadata,
+        info_file,
+        output_file,
+        output_format,
+        sfs=sfs,
+        folded=folded,
+        sfs_normalized=sfs_normalized,
+        fixation_time=fixation_time,
+        msms_cache=msms_cache,
+        ref_population=ref_population,
+        sweep_population=sweep_population,
+        sweep_pos=sweep_pos,
+        sweep_time=sweep_time,
+        selection_coeff=selection_coeff,
+        growth_steps=growth_steps,
+        slim_scaling_factor=slim_scaling_factor,
+        slim_burn_in=slim_burn_in,
+        get_commands=args.get_commands,
+    )
 
     try:
         if parallel <= 1:
