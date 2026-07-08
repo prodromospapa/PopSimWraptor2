@@ -355,7 +355,7 @@ def main(argv=None):
     model_dict = model_std.model.asdict()
 
     if engine in ("slim", "msms", "discoal"):
-        if sweep_pos:
+        if sweep_pos is not None:
             if fixation_time < 0:
                 raise ValueError("--fixation-time must be a non-negative integer")
             if engine == "msms" and fixation_time > 0:
@@ -423,13 +423,13 @@ def main(argv=None):
         a_n = np.sum(1.0 / np.arange(1, n_haps))
         theta_per_bp = N0 * ploidy * 2.0 * mutation_rate
         length = int(math.ceil(target_snps / (theta_per_bp * a_n)) * 2)
-        if sweep_pos:
+        if sweep_pos is not None:
             length = length * 5
     if length is None:
         length = contig.length
     if ref_population is None:
         ref_population = sim_populations[0]
-    if sweep_pos:
+    if sweep_pos is not None:
         sweep_pos = int(length * sweep_pos)
 
     metadata = {

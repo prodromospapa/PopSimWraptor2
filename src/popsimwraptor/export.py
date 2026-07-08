@@ -15,7 +15,7 @@ def ts2sfs(ts, folded, normalized):
     )
     if normalized:
         sfs_result = sfs_result / sfs_result.sum()
-    sfs_result = sfs_result[1:-1]  # exclude monomorphic
+    sfs_result = sfs_result[1:] if folded else sfs_result[1:-1]  # exclude monomorphic
     return sfs_result
 
 
@@ -67,7 +67,7 @@ def msms2sfs(ms_text, fold, normalized):
 
     if normalized and sfs.sum() > 0:
         sfs /= sfs.sum()
-    return sfs[1:-1]  # exclude monomorphic
+    return sfs[1:] if fold else sfs[1:-1]  # exclude monomorphic
 
 
 
