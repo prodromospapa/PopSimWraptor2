@@ -129,6 +129,65 @@ def msms2ms(msms_command, *, sink=None, return_chunks=True):
     return chunks or []
 
 
+_VCF_BASES = ("A", "C", "G", "T")
+
+
+def ms_chunk_to_vcf(ms_chunk, ploidy, length, haplotypes=None):
+    lines = ms_chunk.strip().split("\n")
+    i, L = 0, len(lines)
+
+    positions = []
+    haplos = []
+    while i < L:
+        if lines[i].startswith("positions:"):
+            positions = [float(p) for p in lines[i].split()[1:]]
+            i += 1
+            while i < L and set(lines[i]) <= {"0", "1"}:
+                haplos.append(lines[i])
+                i += 1
+            break
+        i += 1
+
+    n = len(haplos) or haplotypes
+    if n is None:
+        raise ValueError("Cannot determine haplotype count: no genotype rows and no haplotypes fallback")
+    if n % ploidy != 0:
+        raise ValueError(f"Haplotype count {n} is not divisible by ploidy {ploidy}")
+
+    genotype_cols = []
+    if haplos:
+        for sample in range(n // ploidy):
+            alleles = [haplos[sample * ploidy + p] for p in range(ploidy)]
+            genotype_cols.append(alleles)
+
+    body = io.StringIO()
+    seen_bp = set()
+    for site_idx, pos in enumerate(positions):
+        bp = int(round(pos * length)) + 1
+        while bp in seen_bp:
+            bp += 1
+        seen_bp.add(bp)
+
+        ref = _VCF_BASES[site_idx % len(_VCF_BASES)]
+        alt = _VCF_BASES[(site_idx + 1) % len(_VCF_BASES)]
+
+        gts = "\t".join(
+            "|".join(hap[site_idx] for hap in genotype_cols[col_idx])
+            for col_idx in range(len(genotype_cols))
+        )
+        body.write(f"1\t{bp}\t{site_idx}\t{ref}\t{alt}\t.\tPASS\t.\tGT\t{gts}\n")
+
+    sample_names = "\t".join(f"tsk_{i}" for i in range(n // ploidy))
+    header = (
+        "##fileformat=VCFv4.2\n"
+        "##FILTER=<ID=PASS,Description=\"All filters passed\">\n"
+        "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n"
+        f"##contig=<ID=1,length={length}>\n"
+        f"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{sample_names}\n"
+    )
+    return header + body.getvalue()
+
+
 def msms_chunk_to_xcf(ms_chunk, metadata, info_file, output_file, output_format, i=None):
     if isinstance(i, int):
         output_path = f"{output_file}/{output_file}_{i+1}.{output_format}"
@@ -142,23 +201,8 @@ def msms_chunk_to_xcf(ms_chunk, metadata, info_file, output_file, output_format,
         map_path = tmp_map.name
 
     try:
-        ms2vcf_cmd = [
-            "ms2vcf",
-            "-ploidy",
-            str(metadata["ploidy"]),
-            "-length",
-            str(metadata["length"]),
-        ]
-        haplotypes = metadata.get("haplotypes")
-        ms_header = (
-            f"ms {haplotypes} 1\n" if haplotypes is not None else ""
-        )
-        ms_payload = ms_header + (ms_chunk if ms_chunk.endswith("\n") else ms_chunk + "\n")
-        vcf_proc = subprocess.run(
-            ms2vcf_cmd,
-            input=ms_payload.encode(),
-            stdout=subprocess.PIPE,
-            check=True,
+        vcf_text = ms_chunk_to_vcf(
+            ms_chunk, metadata["ploidy"], metadata["length"], metadata.get("haplotypes")
         )
 
         annotate_cmd = [
@@ -175,7 +219,7 @@ def msms_chunk_to_xcf(ms_chunk, metadata, info_file, output_file, output_format,
         ]
         subprocess.run(
             annotate_cmd,
-            input=vcf_proc.stdout,
+            input=vcf_text.encode(),
             check=True,
         )
     finally:
@@ -219,7 +263,7 @@ def ts2xcf(ts, metadata, info_file, output_file, output_format, i=None):
     output_type = {"vcf.gz": "z", "bcf": "b", "vcf": "v"}[output_format]
     cmd = ["bcftools", "annotate", "-h", info_file, f"-O{output_type}", "-o", output_path, "-"]
     with subprocess.Popen(cmd, stdin=subprocess.PIPE, text=True) as proc:
-        ts.write_vcf(proc.stdin, contig_id=metadata["chromosome"])
+        _to_infinite_sites(ts, metadata["mu"]).write_vcf(proc.stdin, contig_id=metadata["chromosome"])
 
 def _to_infinite_sites(ts, mu):
     if ts.num_sites:

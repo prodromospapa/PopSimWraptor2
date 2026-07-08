@@ -35,7 +35,7 @@ be installed on the host besides Docker itself.
 ```bash
 docker build -t popsimwraptor .
 docker run --rm -v "$PWD/results:/results" popsimwraptor \
-  --species HomSap --engine msprime --chromosome chr22 \
+  --species HomSap --engine msprime --chromosome 22 \
   --demography OutOfAfrica_2T12 --sim-population AFR,EUR --sample-counts 10,10 \
   --length 200000 --simulations 10 --output-format ms --output-file /results/homsap_msprime
 ```
@@ -61,7 +61,7 @@ required at any point. `pip install -e .` (already run via `environment.yml`'s p
 command on your `PATH` while the environment is active.
 
 ```bash
-popsimwraptor --species HomSap --engine msprime --chromosome chr22 \
+popsimwraptor --species HomSap --engine msprime --chromosome 22 \
   --demography OutOfAfrica_2T12 --sim-population AFR,EUR --sample-counts 10,10 \
   --length 200000 --simulations 10 --output-format ms --output-file results/homsap_msprime
 ```
@@ -113,7 +113,7 @@ Supported for `slim`, `msms`, and `discoal`:
 popsimwraptor \
   --species HomSap \
   --engine msprime \
-  --chromosome chr22 \
+  --chromosome 22 \
   --demography OutOfAfrica_2T12 \
   --sim-population AFR,EUR \
   --sample-counts 10,10 \
@@ -129,7 +129,7 @@ popsimwraptor \
 popsimwraptor \
   --species HomSap \
   --engine slim \
-  --chromosome chr22 \
+  --chromosome 22 \
   --demography OutOfAfrica_2T12 \
   --sim-population AFR,EUR \
   --sample-counts 10,10 \
@@ -149,7 +149,7 @@ popsimwraptor \
 popsimwraptor \
   --species HomSap \
   --engine msms \
-  --chromosome chr22 \
+  --chromosome 22 \
   --demography OutOfAfrica_2T12 \
   --sim-population AFR,EUR \
   --sample-counts 10,10 \
@@ -165,7 +165,7 @@ popsimwraptor \
 popsimwraptor \
   --species HomSap \
   --engine msprime \
-  --chromosome chr22 \
+  --chromosome 22 \
   --demography OutOfAfrica_2T12 \
   --sim-population AFR,EUR \
   --sample-counts 10,10 \
